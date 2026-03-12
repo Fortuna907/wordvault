@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1a1612">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>WordVault</title>
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #12100e;
+    --surface: #1e1a16;
+    --surface2: #2a2420;
+    --surface3: #33291f;
+    --border: #3d3028;
+    --text: #e8ddd0;
+    --text-dim: #9a8878;
+    --text-muted: #5a4e44;
+    --amber: #c8922a;
+    --amber-light: #e8b84b;
+    --amber-dim: #7a5a1a;
+    --green: #4a9a6a;
+    --red: #c05050;
+    --blue: #4a7aaa;
+    --highlight: #c8922a33;
+    --highlight-border: #c8922a88;
+    --radius: 10px;
+    --font-serif: 'Lora', Georgia, serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-serif);
+    min-height: 100vh;
+    max-width: 480px;
+    margin: 0 auto;
+    padding-bottom: 80px;
+  }
+
+  /* HEADER */
+  .header {
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 100;
+  }
+  .logo { font-size: 20px; font-weight: 600; color: var(--amber-light); letter-spacing: -0.3px; }
+  .logo span { color: var(--text-dim); font-weight: 400; font-size: 14px; margin-left: 6px; }
+  .streak-badge {
+    display: flex; align-items: center; gap: 5px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 20px; padding: 5px 12px;
+    font-family: var(--font-mono); font-size: 13px; color: var(--amber);
+  }
+
+  /* NAV */
+  .nav {
+    display: flex; background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .nav::-webkit-scrollbar { display: none; }
+  .nav-btn {
+    flex: 1; padding: 12px 8px;
+    background: none; border: none;
+    color: var(--text-muted); font-family: var(--font-mono);
+    font-size: 11px; cursor: pointer; letter-spacing: 0.5px;
+    white-space: nowrap; border-bottom: 2px solid transparent;
+    transition: all 0.2s; min-width: 70px;
+  }
+  .nav-btn.active { color: var(--amber-light); border-bottom-color: var(--amber); background: var(--surface2); }
+  .nav-btn:hover { color: var(--text); }
+
+  /* PAGES */
+  .page { display: none; padding: 20px; }
+  .page.active { display: block; }
+
+  .section-title {
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--text-muted); text-transform: uppercase;
+    letter-spacing: 1.5px; margin-bottom: 14px;
+  }
+
+  /* FORM */
+  .form-group { margin-bottom: 14px; }
+  .form-label {
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--text-dim); display: block;
+    margin-bottom: 6px; letter-spacing: 0.5px;
+  }
+  .form-input, .form-textarea, .form-select {
+    width: 100%; background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 11px 14px; color: var(--text);
+    font-family: var(--font-serif); font-size: 15px;
+    outline: none; transition: border-color 0.2s; -webkit-appearance: none;
+  }
+  .form-input:focus, .form-textarea:focus { border-color: var(--amber-dim); }
+  .form-input::placeholder, .form-textarea::placeholder { color: var(--text-muted); font-style: italic; }
+  .form-textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
+
+  /* Sentence preview with highlight */
+  .sentence-preview {
+    margin-top: 8px;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-style: italic;
+    line-height: 1.6;
+    color: var(--text-dim);
+    min-height: 40px;
+    display: none;
+  }
+  .sentence-preview.has-content { display: block; }
+  .sentence-preview .hl {
+    background: var(--highlight);
+    border-bottom: 2px solid var(--highlight-border);
+    color: var(--amber-light);
+    border-radius: 3px;
+    padding: 0 2px;
+    font-style: normal;
+    font-weight: 600;
+  }
+  .preview-label {
+    font-family: var(--font-mono); font-size: 10px;
+    color: var(--text-muted); margin-bottom: 4px; display: none;
+  }
+  .preview-label.has-content { display: block; }
+
+  .type-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .type-tag {
+    padding: 5px 12px; border-radius: 20px;
+    border: 1px solid var(--border); background: none;
+    color: var(--text-muted); font-family: var(--font-mono);
+    font-size: 11px; cursor: pointer; transition: all 0.15s;
+  }
+  .type-tag.selected { background: var(--amber-dim); border-color: var(--amber); color: var(--amber-light); }
+
+  .btn-primary {
+    width: 100%; padding: 13px;
+    background: var(--amber); border: none; border-radius: var(--radius);
+    color: #12100e; font-family: var(--font-mono); font-size: 13px;
+    font-weight: 600; cursor: pointer; letter-spacing: 0.5px;
+    transition: background 0.2s; margin-top: 6px;
+  }
+  .btn-primary:hover { background: var(--amber-light); }
+  .btn-primary:active { transform: scale(0.98); }
+
+  /* LIBRARY TOOLBAR */
+  .lib-toolbar {
+    display: flex; align-items: center;
+    justify-content: space-between; margin-bottom: 12px; gap: 8px;
+  }
+  .search-input {
+    flex: 1; background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 9px 14px; color: var(--text);
+    font-family: var(--font-mono); font-size: 13px; outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-input:focus { border-color: var(--amber-dim); }
+  .search-input::placeholder { color: var(--text-muted); }
+
+  .btn-icon {
+    padding: 9px 12px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    color: var(--text-dim); font-family: var(--font-mono);
+    font-size: 11px; cursor: pointer; white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .btn-icon:hover { border-color: var(--amber-dim); color: var(--text); }
+  .btn-icon.active { border-color: var(--amber); color: var(--amber-light); background: var(--surface2); }
+  .btn-icon.danger { border-color: var(--red); color: var(--red); }
+
+  /* BULK ACTION BAR */
+  .bulk-bar {
+    display: none; align-items: center; justify-content: space-between;
+    background: var(--surface2); border: 1px solid var(--amber-dim);
+    border-radius: var(--radius); padding: 10px 14px; margin-bottom: 12px;
+  }
+  .bulk-bar.visible { display: flex; }
+  .bulk-info { font-family: var(--font-mono); font-size: 12px; color: var(--amber-light); }
+  .bulk-actions { display: flex; gap: 8px; }
+  .btn-bulk-del {
+    padding: 6px 12px; background: var(--red); border: none;
+    border-radius: 6px; color: white; font-family: var(--font-mono);
+    font-size: 11px; cursor: pointer;
+  }
+  .btn-bulk-cancel {
+    padding: 6px 12px; background: none; border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text-dim); font-family: var(--font-mono);
+    font-size: 11px; cursor: pointer;
+  }
+
+  /* FILTER BAR */
+  .filter-bar {
+    display: flex; gap: 8px; margin-bottom: 16px;
+    overflow-x: auto; scrollbar-width: none; padding-bottom: 4px;
+  }
+  .filter-bar::-webkit-scrollbar { display: none; }
+  .filter-chip {
+    padding: 5px 14px; border-radius: 20px; border: 1px solid var(--border);
+    background: none; color: var(--text-muted); font-family: var(--font-mono);
+    font-size: 11px; cursor: pointer; white-space: nowrap; transition: all 0.15s;
+  }
+  .filter-chip.active { background: var(--surface2); border-color: var(--amber-dim); color: var(--amber-light); }
+
+  /* WORD CARDS */
+  .word-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px 14px 12px;
+    margin-bottom: 10px; transition: border-color 0.2s;
+    position: relative;
+  }
+  .word-card:hover { border-color: var(--amber-dim); }
+  .word-card.selected { border-color: var(--amber); background: #1e1a1680; }
+
+  .word-card-top { display: flex; align-items: flex-start; gap: 10px; }
+  .word-checkbox {
+    width: 18px; height: 18px; border-radius: 5px;
+    border: 2px solid var(--border); background: none;
+    cursor: pointer; flex-shrink: 0; margin-top: 3px;
+    transition: all 0.15s; appearance: none; -webkit-appearance: none;
+    display: none;
+  }
+  .word-checkbox:checked { background: var(--amber); border-color: var(--amber); }
+  .word-checkbox:checked::after {
+    content: '✓'; color: #12100e; font-size: 12px;
+    font-weight: 700; display: block; text-align: center; line-height: 14px;
+  }
+  body.select-mode .word-checkbox { display: block; }
+
+  .word-card-content { flex: 1; min-width: 0; }
+  .word-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+  .word-main { font-size: 18px; font-weight: 600; color: var(--amber-light); }
+  .word-type-badge {
+    font-family: var(--font-mono); font-size: 10px; padding: 2px 8px;
+    border-radius: 4px; background: var(--surface3); color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .word-meaning { font-size: 14px; color: var(--text-dim); margin-bottom: 8px; line-height: 1.5; }
+
+  /* Highlighted sentence in card */
+  .word-sentence {
+    font-size: 13px; line-height: 1.6;
+    padding: 8px 12px; background: var(--surface2);
+    border-left: 2px solid var(--amber-dim);
+    border-radius: 0 6px 6px 0; margin-bottom: 10px;
+    color: var(--text-dim);
+  }
+  .word-sentence .hl {
+    background: var(--highlight); border-bottom: 2px solid var(--highlight-border);
+    color: var(--amber-light); border-radius: 3px; padding: 0 2px;
+    font-style: normal; font-weight: 600;
+  }
+
+  .word-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .word-source { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
+  .word-level { font-family: var(--font-mono); font-size: 10px; padding: 2px 8px; border-radius: 4px; }
+  .level-new { background: #1a3a5a; color: #6aaadd; }
+  .level-learning { background: #3a2a1a; color: #c8922a; }
+  .level-review { background: #1a3a2a; color: #4a9a6a; }
+  .level-mastered { background: #2a2a1a; color: #8a8a4a; }
+
+  .card-actions { display: flex; gap: 8px; }
+  .btn-sm {
+    padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border);
+    background: none; color: var(--text-dim); font-family: var(--font-mono);
+    font-size: 11px; cursor: pointer; transition: all 0.15s;
+  }
+  .btn-sm:hover { border-color: var(--amber-dim); color: var(--text); }
+  .btn-sm.danger:hover { border-color: var(--red); color: var(--red); }
+
+  /* EXPORT/IMPORT SECTION */
+  .io-section {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px; margin-bottom: 12px;
+  }
+  .io-section h3 { font-family: var(--font-mono); font-size: 12px; color: var(--amber); margin-bottom: 8px; }
+  .io-section p { font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 12px; }
+  .io-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn-io {
+    padding: 9px 16px; border-radius: var(--radius);
+    border: 1px solid var(--border); background: var(--surface2);
+    color: var(--text-dim); font-family: var(--font-mono);
+    font-size: 12px; cursor: pointer; transition: all 0.15s;
+  }
+  .btn-io:hover { border-color: var(--amber-dim); color: var(--amber-light); }
+  .btn-io.primary { background: var(--amber-dim); border-color: var(--amber); color: var(--amber-light); }
+  .btn-io.primary:hover { background: var(--amber); color: #12100e; }
+
+  /* REVIEW */
+  .review-header { text-align: center; margin-bottom: 24px; }
+  .review-count { font-family: var(--font-mono); font-size: 13px; color: var(--text-muted); margin-bottom: 6px; }
+  .review-progress { height: 3px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+  .review-progress-bar { height: 100%; background: var(--amber); border-radius: 2px; transition: width 0.3s; }
+
+  .flashcard-area { perspective: 1000px; margin-bottom: 24px; }
+  .flashcard {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 32px 24px; min-height: 220px;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; text-align: center; cursor: pointer;
+    transition: border-color 0.2s, transform 0.1s; position: relative; overflow: hidden;
+  }
+  .flashcard:active { transform: scale(0.98); }
+  .flashcard.flipped { border-color: var(--amber-dim); }
+  .flashcard::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--amber-dim), transparent);
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .flashcard.flipped::before { opacity: 1; }
+
+  .fc-word { font-size: 28px; font-weight: 600; color: var(--amber-light); margin-bottom: 8px; }
+  .fc-type { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-bottom: 20px; }
+  .fc-tap-hint { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); }
+  .fc-meaning { font-size: 17px; color: var(--text); margin-bottom: 12px; line-height: 1.5; }
+  .fc-sentence { font-size: 13px; line-height: 1.5; max-width: 100%; }
+  .fc-sentence .hl { background: var(--highlight); border-bottom: 2px solid var(--highlight-border); color: var(--amber-light); border-radius: 3px; padding: 0 2px; font-weight: 600; }
+  .fc-source { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); margin-top: 14px; }
+
+  .rating-buttons { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .rating-btn {
+    padding: 14px 8px; border-radius: var(--radius);
+    border: 1px solid var(--border); background: var(--surface);
+    cursor: pointer; transition: all 0.15s; text-align: center;
+  }
+  .rating-btn .rb-emoji { font-size: 20px; display: block; margin-bottom: 4px; }
+  .rating-btn .rb-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); display: block; }
+  .rating-btn .rb-desc { font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); display: block; margin-top: 2px; }
+  .rating-btn:hover { transform: translateY(-2px); }
+  .rating-btn.hard:hover { border-color: var(--red); background: #2a1515; }
+  .rating-btn.ok:hover { border-color: var(--amber); background: #2a1f10; }
+  .rating-btn.easy:hover { border-color: var(--green); background: #152515; }
+
+  .review-done { text-align: center; padding: 40px 20px; }
+  .review-done .done-icon { font-size: 48px; margin-bottom: 16px; }
+  .review-done h2 { font-size: 22px; color: var(--amber-light); margin-bottom: 8px; }
+  .review-done p { color: var(--text-muted); font-size: 14px; line-height: 1.6; }
+  .review-empty { text-align: center; padding: 40px 20px; }
+  .review-empty .empty-icon { font-size: 40px; margin-bottom: 14px; }
+  .review-empty p { color: var(--text-muted); font-size: 14px; line-height: 1.6; }
+
+  /* STATS */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; text-align: center; }
+  .stat-number { font-size: 28px; font-weight: 600; color: var(--amber-light); font-family: var(--font-mono); }
+  .stat-label { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+  .level-breakdown { margin-bottom: 20px; }
+  .level-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .level-name { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); width: 70px; }
+  .level-bar-bg { flex: 1; height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+  .level-bar { height: 100%; border-radius: 3px; transition: width 0.5s; }
+  .level-bar.new { background: #4a80bb; }
+  .level-bar.learning { background: var(--amber); }
+  .level-bar.review { background: var(--green); }
+  .level-bar.mastered { background: #8a8a4a; }
+  .level-count { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); width: 24px; text-align: right; }
+
+  .algo-info { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; }
+  .algo-info h3 { font-size: 14px; color: var(--amber); margin-bottom: 8px; font-family: var(--font-mono); }
+  .algo-info p { font-size: 13px; color: var(--text-dim); line-height: 1.6; }
+
+  /* Empty state */
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 14px; }
+  .empty-state .empty-icon { font-size: 36px; margin-bottom: 12px; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 90px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--surface3); border: 1px solid var(--amber-dim);
+    color: var(--amber-light); font-family: var(--font-mono); font-size: 13px;
+    padding: 10px 20px; border-radius: 20px; opacity: 0;
+    transition: all 0.3s; z-index: 999; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+    align-items: center; justify-content: center; z-index: 999; display: none;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px; width: 90%; max-width: 340px; }
+  .modal h3 { font-size: 16px; margin-bottom: 8px; color: var(--text); }
+  .modal p { font-size: 14px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5; }
+  .modal-actions { display: flex; gap: 10px; }
+  .btn-cancel { flex: 1; padding: 10px; border-radius: var(--radius); border: 1px solid var(--border); background: none; color: var(--text-dim); font-family: var(--font-mono); font-size: 12px; cursor: pointer; }
+  .btn-confirm-del { flex: 1; padding: 10px; border-radius: var(--radius); border: none; background: var(--red); color: white; font-family: var(--font-mono); font-size: 12px; cursor: pointer; }
+
+  /* Due badge */
+  .due-badge { display: inline-block; background: var(--red); color: white; font-size: 9px; border-radius: 8px; padding: 1px 5px; margin-left: 4px; vertical-align: middle; font-family: var(--font-mono); }
+
+  /* Hidden file input */
+  #import-file-input { display: none; }
+
+  /* REVIEW MODE SELECTOR */
+  .mode-selector {
+    display: flex; gap: 0; margin-bottom: 20px;
+    border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;
+  }
+  .mode-btn {
+    flex: 1; padding: 10px 8px; background: none; border: none;
+    color: var(--text-muted); font-family: var(--font-mono); font-size: 11px;
+    cursor: pointer; transition: all 0.15s; letter-spacing: 0.3px;
+    border-right: 1px solid var(--border);
+  }
+  .mode-btn:last-child { border-right: none; }
+  .mode-btn.active { background: var(--surface2); color: var(--amber-light); }
+  .mode-btn:hover:not(.active) { color: var(--text); background: var(--surface); }
+
+  /* Quiz filter row */
+  .quiz-filter-row {
+    display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
+  }
+  .quiz-chip {
+    padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border);
+    background: none; color: var(--text-muted); font-family: var(--font-mono);
+    font-size: 10px; cursor: pointer; white-space: nowrap; transition: all 0.15s;
+  }
+  .quiz-chip.active { background: var(--surface2); border-color: var(--amber-dim); color: var(--amber-light); }
+
+  /* Endless quiz counter */
+  .endless-counter {
+    text-align: center; margin-bottom: 20px;
+  }
+  .endless-score {
+    font-family: var(--font-mono); font-size: 13px; color: var(--text-muted);
+  }
+  .endless-score span { color: var(--amber-light); font-size: 16px; }
+
+  /* Skip button */
+  .btn-skip {
+    display: block; width: 100%; margin-top: 12px;
+    padding: 10px; border-radius: var(--radius);
+    border: 1px solid var(--border); background: none;
+    color: var(--text-muted); font-family: var(--font-mono);
+    font-size: 11px; cursor: pointer; transition: all 0.15s;
+    text-align: center;
+  }
+  .btn-skip:hover { border-color: var(--border); color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">WordVault <span>reader's companion</span></div>
+  <div class="streak-badge">🔥 <span id="streak-display">0</span> day</div>
+</div>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="showPage('add')">＋ ADD</button>
+  <button class="nav-btn" onclick="showPage('library')">📚 LIBRARY</button>
+  <button class="nav-btn" onclick="showPage('review')">🎯 REVIEW <span id="due-count-badge"></span></button>
+  <button class="nav-btn" onclick="showPage('stats')">📊 STATS</button>
+</nav>
+
+<!-- ADD PAGE -->
+<div id="page-add" class="page active">
+  <p class="section-title">New Word / Phrase</p>
+
+  <div class="form-group">
+    <label class="form-label">WORD OR PHRASE *</label>
+    <input id="inp-word" class="form-input" type="text" placeholder="e.g. ephemeral, take it with a grain of salt..." oninput="updatePreview()">
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">MEANING (Turkish or English) *</label>
+    <input id="inp-meaning" class="form-input" type="text" placeholder="e.g. kısa ömürlü, geçici">
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">EXAMPLE SENTENCE</label>
+    <textarea id="inp-sentence" class="form-textarea" placeholder="Paste the sentence from the book — the word will be highlighted automatically..." oninput="updatePreview()"></textarea>
+    <div class="preview-label" id="preview-label">PREVIEW WITH HIGHLIGHT</div>
+    <div class="sentence-preview" id="sentence-preview"></div>
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">BOOK / SOURCE</label>
+    <input id="inp-source" class="form-input" type="text" placeholder="e.g. Atomic Habits, Chapter 3">
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">WORD TYPE</label>
+    <div class="type-tags" id="type-tags">
+      <button class="type-tag selected" data-type="word" onclick="selectType(this)">Word</button>
+      <button class="type-tag" data-type="phrase" onclick="selectType(this)">Phrase</button>
+      <button class="type-tag" data-type="idiom" onclick="selectType(this)">Idiom</button>
+      <button class="type-tag" data-type="phrasal" onclick="selectType(this)">Phrasal Verb</button>
+      <button class="type-tag" data-type="grammar" onclick="selectType(this)">Grammar</button>
+    </div>
+  </div>
+
+  <button class="btn-primary" onclick="addWord()">SAVE TO VAULT</button>
+</div>
+
+<!-- LIBRARY PAGE -->
+<div id="page-library" class="page">
+  <div class="lib-toolbar">
+    <input class="search-input" type="text" placeholder="Search..." oninput="renderLibrary(this.value)" id="search-inp">
+    <button class="btn-icon" id="select-mode-btn" onclick="toggleSelectMode()">☑ Select</button>
+  </div>
+
+  <!-- Bulk action bar -->
+  <div class="bulk-bar" id="bulk-bar">
+    <span class="bulk-info"><span id="selected-count">0</span> selected</span>
+    <div class="bulk-actions">
+      <button class="btn-bulk-cancel" onclick="selectAll()">All</button>
+      <button class="btn-bulk-cancel" onclick="cancelSelectMode()">Cancel</button>
+      <button class="btn-bulk-del" onclick="bulkDelete()">🗑 Delete</button>
+    </div>
+  </div>
+
+  <div class="filter-bar" id="source-filters">
+    <button class="filter-chip active" data-src="all" onclick="filterBySource(this)">All</button>
+  </div>
+
+  <div id="library-list"></div>
+</div>
+
+<!-- REVIEW PAGE -->
+<div id="page-review" class="page">
+  <div class="mode-selector">
+    <button class="mode-btn active" id="mode-due-btn" onclick="setReviewMode('due')">⏰ Due Only</button>
+    <button class="mode-btn" id="mode-endless-btn" onclick="setReviewMode('endless')">♾ Endless Quiz</button>
+  </div>
+  <div id="endless-filters" style="display:none">
+    <div class="quiz-filter-row" id="quiz-source-chips"></div>
+  </div>
+  <div id="review-container"></div>
+</div>
+
+<!-- STATS PAGE -->
+<div id="page-stats" class="page">
+  <p class="section-title">Your Progress</p>
+  <div class="stats-grid" id="stats-grid"></div>
+
+  <p class="section-title">Level Breakdown</p>
+  <div class="level-breakdown" id="level-breakdown"></div>
+
+  <p class="section-title">Export / Import</p>
+  <div class="io-section">
+    <h3>📤 EXPORT</h3>
+    <p>Download your vault as a JSON file. Use this to transfer data between your PC and tablet.</p>
+    <div class="io-buttons">
+      <button class="btn-io primary" onclick="exportData()">Download wordvault.json</button>
+    </div>
+  </div>
+  <div class="io-section">
+    <h3>📥 IMPORT</h3>
+    <p>Load a previously exported JSON file. Your existing words will be <strong style="color:var(--amber)">merged</strong> — duplicates skipped.</p>
+    <div class="io-buttons">
+      <button class="btn-io" onclick="document.getElementById('import-file-input').click()">Choose JSON file…</button>
+    </div>
+    <input type="file" id="import-file-input" accept=".json" onchange="importData(this)">
+  </div>
+
+  <p class="section-title">How It Works</p>
+  <div class="algo-info">
+    <h3>SM-2 Spaced Repetition</h3>
+    <p>WordVault uses the same algorithm as Anki. Each time you review a card, you rate it Hard / OK / Easy. The app calculates when to show it next — the better you know a word, the longer it waits. This forces active recall, which is proven to be far more effective than re-reading.</p>
+  </div>
+  <div class="algo-info">
+    <h3>4 Levels</h3>
+    <p><strong style="color:#6aaadd">New</strong> → just added. <strong style="color:#c8922a">Learning</strong> → seen but still shaky. <strong style="color:#4a9a6a">Review</strong> → scheduled for periodic review. <strong style="color:#8a8a4a">Mastered</strong> → long interval, you know it well.</p>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Delete Modal -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal">
+    <h3 id="delete-modal-title">Delete Word?</h3>
+    <p id="delete-modal-text">This will permanently remove this word from your vault.</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn-confirm-del" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const STORAGE_KEY = 'wordvault_v2';
+function loadData() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || { words: [], streak: 0, lastStudy: null }; }
+  catch { return { words: [], streak: 0, lastStudy: null }; }
+}
+function saveData(data) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+let db = loadData();
+
+// ============================================================
+// SM-2
+// ============================================================
+function sm2(card, quality) {
+  let { interval, easeFactor, repetitions } = card;
+  if (quality < 3) { repetitions = 0; interval = 1; }
+  else {
+    if (repetitions === 0) interval = 1;
+    else if (repetitions === 1) interval = 6;
+    else interval = Math.round(interval * easeFactor);
+    repetitions++;
+    easeFactor = Math.max(1.3, easeFactor + 0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+  }
+  return { interval, easeFactor, repetitions, nextReview: Date.now() + interval * 86400000 };
+}
+function getLevel(card) {
+  if (card.repetitions === 0) return 'new';
+  if (card.interval <= 1) return 'learning';
+  if (card.interval <= 21) return 'review';
+  return 'mastered';
+}
+function isDue(card) { return Date.now() >= card.nextReview; }
+function getDueCards() { return db.words.filter(isDue); }
+
+// ============================================================
+// HIGHLIGHT HELPER
+// ============================================================
+function buildHighlightedSentence(sentence, word) {
+  if (!sentence || !word) return escHtml(sentence || '');
+  // Escape for regex, handle multi-word phrases
+  const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escaped})`, 'gi');
+  return escHtml(sentence).replace(
+    new RegExp(`(${escHtml(word).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'),
+    '<span class="hl">$1</span>'
+  );
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ============================================================
+// STREAK
+// ============================================================
+function updateStreak() {
+  const today = new Date().toDateString();
+  if (db.lastStudy === today) return;
+  const yesterday = new Date(Date.now() - 86400000).toDateString();
+  db.streak = (db.lastStudy === yesterday) ? (db.streak || 0) + 1 : 1;
+  db.lastStudy = today;
+  saveData(db);
+  document.getElementById('streak-display').textContent = db.streak;
+}
+function initStreak() { document.getElementById('streak-display').textContent = db.streak || 0; }
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    if (b.getAttribute('onclick').includes("'" + page + "'")) b.classList.add('active');
+  });
+  if (page === 'library') { cancelSelectMode(); renderLibrary(''); }
+  if (page === 'review') renderReview();
+  if (page === 'stats') renderStats();
+  updateDueBadge();
+}
+function updateDueBadge() {
+  const due = getDueCards().length;
+  document.getElementById('due-count-badge').innerHTML = due > 0 ? `<span class="due-badge">${due}</span>` : '';
+}
+
+// ============================================================
+// ADD WORD
+// ============================================================
+let selectedType = 'word';
+function selectType(el) {
+  document.querySelectorAll('.type-tag').forEach(t => t.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedType = el.dataset.type;
+}
+
+function updatePreview() {
+  const word = document.getElementById('inp-word').value.trim();
+  const sentence = document.getElementById('inp-sentence').value.trim();
+  const preview = document.getElementById('sentence-preview');
+  const label = document.getElementById('preview-label');
+  if (sentence) {
+    preview.innerHTML = buildHighlightedSentence(sentence, word);
+    preview.classList.add('has-content');
+    label.classList.add('has-content');
+  } else {
+    preview.classList.remove('has-content');
+    label.classList.remove('has-content');
+  }
+}
+
+function addWord() {
+  const word = document.getElementById('inp-word').value.trim();
+  const meaning = document.getElementById('inp-meaning').value.trim();
+  const sentence = document.getElementById('inp-sentence').value.trim();
+  const source = document.getElementById('inp-source').value.trim();
+  if (!word || !meaning) { showToast('⚠ Word and meaning are required'); return; }
+
+  db.words.unshift({
+    id: Date.now().toString(),
+    word, meaning, sentence, source,
+    type: selectedType,
+    createdAt: Date.now(),
+    interval: 0, easeFactor: 2.5, repetitions: 0, nextReview: Date.now()
+  });
+  saveData(db);
+
+  document.getElementById('inp-word').value = '';
+  document.getElementById('inp-meaning').value = '';
+  document.getElementById('inp-sentence').value = '';
+  document.getElementById('sentence-preview').classList.remove('has-content');
+  document.getElementById('preview-label').classList.remove('has-content');
+
+  showToast('✓ Saved to vault');
+  updateDueBadge();
+  updateSourceFilters();
+}
+
+// ============================================================
+// LIBRARY
+// ============================================================
+let activeSourceFilter = 'all';
+let selectMode = false;
+let selectedIds = new Set();
+
+function updateSourceFilters() {
+  const sources = [...new Set(db.words.map(w => w.source).filter(Boolean))];
+  const bar = document.getElementById('source-filters');
+  bar.innerHTML = `<button class="filter-chip ${activeSourceFilter === 'all' ? 'active' : ''}" data-src="all" onclick="filterBySource(this)">All</button>`;
+  sources.forEach(s => {
+    bar.innerHTML += `<button class="filter-chip ${activeSourceFilter === s ? 'active' : ''}" data-src="${escHtml(s)}" onclick="filterBySource(this)">${escHtml(s)}</button>`;
+  });
+}
+
+function filterBySource(el) {
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  activeSourceFilter = el.dataset.src;
+  renderLibrary(document.getElementById('search-inp')?.value || '');
+}
+
+// --- SELECT MODE ---
+function toggleSelectMode() {
+  selectMode ? cancelSelectMode() : enterSelectMode();
+}
+function enterSelectMode() {
+  selectMode = true;
+  selectedIds.clear();
+  document.body.classList.add('select-mode');
+  document.getElementById('select-mode-btn').classList.add('active');
+  document.getElementById('select-mode-btn').textContent = '✕ Done';
+  document.getElementById('bulk-bar').classList.add('visible');
+  updateBulkBar();
+  renderLibrary(document.getElementById('search-inp')?.value || '');
+}
+function cancelSelectMode() {
+  selectMode = false;
+  selectedIds.clear();
+  document.body.classList.remove('select-mode');
+  const btn = document.getElementById('select-mode-btn');
+  if (btn) { btn.classList.remove('active'); btn.textContent = '☑ Select'; }
+  document.getElementById('bulk-bar').classList.remove('visible');
+  renderLibrary(document.getElementById('search-inp')?.value || '');
+}
+function selectAll() {
+  const visibleIds = getFilteredWords(document.getElementById('search-inp')?.value || '').map(w => w.id);
+  const allSelected = visibleIds.every(id => selectedIds.has(id));
+  if (allSelected) visibleIds.forEach(id => selectedIds.delete(id));
+  else visibleIds.forEach(id => selectedIds.add(id));
+  updateBulkBar();
+  renderLibrary(document.getElementById('search-inp')?.value || '');
+}
+function toggleSelect(id) {
+  if (selectedIds.has(id)) selectedIds.delete(id);
+  else selectedIds.add(id);
+  updateBulkBar();
+  // update just the checkbox and card style
+  const card = document.querySelector(`.word-card[data-id="${id}"]`);
+  const cb = document.querySelector(`#cb-${id}`);
+  if (card) card.classList.toggle('selected', selectedIds.has(id));
+  if (cb) cb.checked = selectedIds.has(id);
+}
+function updateBulkBar() {
+  document.getElementById('selected-count').textContent = selectedIds.size;
+}
+
+function bulkDelete() {
+  if (selectedIds.size === 0) { showToast('Nothing selected'); return; }
+  deleteTargetIds = [...selectedIds];
+  document.getElementById('delete-modal-title').textContent = `Delete ${deleteTargetIds.length} word${deleteTargetIds.length !== 1 ? 's' : ''}?`;
+  document.getElementById('delete-modal-text').textContent = 'This cannot be undone.';
+  document.getElementById('delete-modal').classList.add('open');
+}
+
+function getFilteredWords(search) {
+  let words = db.words;
+  if (activeSourceFilter !== 'all') words = words.filter(w => w.source === activeSourceFilter);
+  if (search) {
+    const q = search.toLowerCase();
+    words = words.filter(w => w.word.toLowerCase().includes(q) || w.meaning.toLowerCase().includes(q));
+  }
+  return words;
+}
+
+function renderLibrary(search = '') {
+  updateSourceFilters();
+  const words = getFilteredWords(search);
+  const list = document.getElementById('library-list');
+
+  if (words.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📖</div><p>${db.words.length === 0 ? 'No words yet. Start reading and add words!' : 'No results found.'}</p></div>`;
+    return;
+  }
+
+  const levelLabels = { new: 'NEW', learning: 'LEARNING', review: 'REVIEW', mastered: 'MASTERED' };
+  const typeLabels = { word: 'word', phrase: 'phrase', idiom: 'idiom', phrasal: 'phrasal verb', grammar: 'grammar' };
+
+  list.innerHTML = words.map(w => {
+    const level = getLevel(w);
+    const due = isDue(w);
+    const daysUntil = Math.ceil((w.nextReview - Date.now()) / 86400000);
+    const nextInfo = due ? '⏰ due now' : (daysUntil === 1 ? 'tomorrow' : `in ${daysUntil}d`);
+    const isSelected = selectedIds.has(w.id);
+    const highlightedSentence = w.sentence ? buildHighlightedSentence(w.sentence, w.word) : '';
+
+    return `
+    <div class="word-card ${isSelected ? 'selected' : ''}" data-id="${w.id}" onclick="${selectMode ? `toggleSelect('${w.id}')` : ''}">
+      <div class="word-card-top">
+        <input type="checkbox" class="word-checkbox" id="cb-${w.id}" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation();toggleSelect('${w.id}')">
+        <div class="word-card-content">
+          <div class="word-card-header">
+            <div>
+              <div class="word-main">${escHtml(w.word)}</div>
+              <span class="word-type-badge">${typeLabels[w.type] || w.type}</span>
+            </div>
+            <span class="word-level level-${level}">${levelLabels[level]}</span>
+          </div>
+          <div class="word-meaning">${escHtml(w.meaning)}</div>
+          ${highlightedSentence ? `<div class="word-sentence">${highlightedSentence}</div>` : ''}
+          <div class="word-meta">
+            <span class="word-source">${w.source ? '📖 ' + escHtml(w.source) : ''}</span>
+            <span class="word-source" style="color:${due ? 'var(--amber)' : 'var(--text-muted)'}">${nextInfo}</span>
+          </div>
+          ${!selectMode ? `<div class="card-actions">
+            <button class="btn-sm" onclick="editWord('${w.id}')">Edit</button>
+            <button class="btn-sm danger" onclick="openDeleteModal('${w.id}')">Delete</button>
+          </div>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// REVIEW
+// ============================================================
+let reviewQueue = [], currentCard = null, isFlipped = false, reviewedCount = 0, totalInSession = 0;
+let reviewMode = 'due'; // 'due' | 'endless'
+let endlessSource = 'all';
+let endlessPool = [];
+let endlessSessionCorrect = 0, endlessSessionTotal = 0;
+
+function setReviewMode(mode) {
+  reviewMode = mode;
+  document.getElementById('mode-due-btn').classList.toggle('active', mode === 'due');
+  document.getElementById('mode-endless-btn').classList.toggle('active', mode === 'endless');
+  document.getElementById('endless-filters').style.display = mode === 'endless' ? 'block' : 'none';
+  if (mode === 'endless') buildQuizSourceChips();
+  renderReview();
+}
+
+function buildQuizSourceChips() {
+  const sources = [...new Set(db.words.map(w => w.source).filter(Boolean))];
+  const chips = document.getElementById('quiz-source-chips');
+  chips.innerHTML = `<button class="quiz-chip ${endlessSource==='all'?'active':''}" onclick="setEndlessSource('all')">All words</button>` +
+    sources.map(s => `<button class="quiz-chip ${endlessSource===s?'active':''}" onclick="setEndlessSource('${escHtml(s)}')">${escHtml(s)}</button>`).join('');
+}
+
+function setEndlessSource(src) {
+  endlessSource = src;
+  buildQuizSourceChips();
+  renderReview();
+}
+
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function renderReview() {
+  if (reviewMode === 'endless') {
+    renderEndlessReview();
+  } else {
+    reviewQueue = getDueCards();
+    totalInSession = reviewQueue.length;
+    reviewedCount = 0;
+    showNextCard();
+  }
+}
+
+function renderEndlessReview() {
+  let pool = db.words;
+  if (endlessSource !== 'all') pool = pool.filter(w => w.source === endlessSource);
+  if (pool.length === 0) {
+    document.getElementById('review-container').innerHTML = `<div class="review-empty"><div class="empty-icon">📚</div><p>No words found.<br>Add some words first or change the filter.</p></div>`;
+    return;
+  }
+  endlessPool = shuffleArray(pool);
+  endlessSessionCorrect = 0;
+  endlessSessionTotal = 0;
+  showEndlessCard();
+}
+
+function showEndlessCard() {
+  if (endlessPool.length === 0) {
+    // reshuffle and continue — truly endless
+    let pool = db.words;
+    if (endlessSource !== 'all') pool = pool.filter(w => w.source === endlessSource);
+    endlessPool = shuffleArray(pool);
+  }
+  currentCard = endlessPool.shift();
+  isFlipped = false;
+
+  const typeLabels = { word: 'word', phrase: 'phrase', idiom: 'idiom', phrasal: 'phrasal verb', grammar: 'grammar' };
+  const highlightedSentence = currentCard.sentence ? buildHighlightedSentence(currentCard.sentence, currentCard.word) : '';
+  const acc = endlessSessionTotal > 0 ? Math.round(endlessSessionCorrect / endlessSessionTotal * 100) : '-';
+
+  document.getElementById('review-container').innerHTML = `
+    <div class="endless-counter">
+      <div class="endless-score">
+        <span>${endlessSessionTotal}</span> cards &nbsp;|&nbsp; accuracy <span>${acc}%</span>
+      </div>
+    </div>
+    <div class="flashcard-area">
+      <div class="flashcard" id="flashcard" onclick="flipEndlessCard()">
+        <div id="fc-front">
+          <div class="fc-word">${escHtml(currentCard.word)}</div>
+          <div class="fc-type">${typeLabels[currentCard.type] || currentCard.type}</div>
+          <div class="fc-tap-hint">tap to reveal →</div>
+        </div>
+        <div id="fc-back" style="display:none">
+          <div class="fc-meaning">${escHtml(currentCard.meaning)}</div>
+          ${highlightedSentence ? `<div class="fc-sentence">${highlightedSentence}</div>` : ''}
+          ${currentCard.source ? `<div class="fc-source">📖 ${escHtml(currentCard.source)}</div>` : ''}
+        </div>
+      </div>
+    </div>
+    <div id="rating-area" style="display:none">
+      <p class="section-title" style="text-align:center;margin-bottom:12px">Did you know it?</p>
+      <div class="rating-buttons">
+        <button class="rating-btn hard" onclick="rateEndless(false)"><span class="rb-emoji">😅</span><span class="rb-label">Nope</span><span class="rb-desc">show again soon</span></button>
+        <button class="rating-btn ok" onclick="rateEndless(true)"><span class="rb-emoji">🤔</span><span class="rb-label">Almost</span><span class="rb-desc">got it</span></button>
+        <button class="rating-btn easy" onclick="rateEndless(true)"><span class="rb-emoji">😊</span><span class="rb-label">Easy</span><span class="rb-desc">knew it!</span></button>
+      </div>
+    </div>
+    <button class="btn-skip" onclick="skipEndless()">skip →</button>`;
+}
+
+function flipEndlessCard() {
+  if (isFlipped) return;
+  isFlipped = true;
+  document.getElementById('fc-front').style.display = 'none';
+  document.getElementById('fc-back').style.display = 'block';
+  document.getElementById('flashcard').classList.add('flipped');
+  document.getElementById('rating-area').style.display = 'block';
+}
+
+function rateEndless(correct) {
+  endlessSessionTotal++;
+  if (correct) endlessSessionCorrect++;
+  // If wrong, push back near end so it comes back
+  if (!correct) endlessPool.push(currentCard);
+  setTimeout(showEndlessCard, 150);
+}
+
+function skipEndless() {
+  endlessPool.push(currentCard); // put at end
+  setTimeout(showEndlessCard, 150);
+}
+
+function showNextCard() {
+  const container = document.getElementById('review-container');
+  if (reviewQueue.length === 0) {
+    if (db.words.length === 0) {
+      container.innerHTML = `<div class="review-empty"><div class="empty-icon">📚</div><p>Your vault is empty.<br>Add some words first.</p></div>`;
+    } else if (totalInSession === 0) {
+      const nextDue = db.words.filter(w => !isDue(w)).sort((a,b) => a.nextReview - b.nextReview)[0];
+      const h = nextDue ? Math.ceil((nextDue.nextReview - Date.now()) / 3600000) : 0;
+      container.innerHTML = `<div class="review-done"><div class="done-icon">✅</div><h2>All caught up!</h2><p>No words due right now.<br>${nextDue ? `Next review in ${h < 24 ? h + ' hours' : Math.ceil(h/24) + ' days'}.` : ''}</p><br><button class="btn-primary" onclick="setReviewMode('endless')" style="max-width:260px;margin:0 auto">♾ Practice with Endless Quiz</button></div>`;
+    } else {
+      container.innerHTML = `<div class="review-done"><div class="done-icon">🏆</div><h2>Session complete!</h2><p>You reviewed <strong>${totalInSession}</strong> word${totalInSession !== 1 ? 's' : ''}.<br>Great work. Come back tomorrow!</p><br><button class="btn-primary" onclick="setReviewMode('endless')" style="max-width:260px;margin:0 auto">♾ Keep going with Endless Quiz</button></div>`;
+      updateStreak();
+    }
+    return;
+  }
+
+  currentCard = reviewQueue.shift();
+  isFlipped = false;
+  const progress = totalInSession > 0 ? ((totalInSession - reviewQueue.length - 1) / totalInSession * 100) : 0;
+  const typeLabels = { word: 'word', phrase: 'phrase', idiom: 'idiom', phrasal: 'phrasal verb', grammar: 'grammar' };
+  const highlightedSentence = currentCard.sentence ? buildHighlightedSentence(currentCard.sentence, currentCard.word) : '';
+
+  container.innerHTML = `
+    <div class="review-header">
+      <div class="review-count">${totalInSession - reviewQueue.length} / ${totalInSession}</div>
+      <div class="review-progress"><div class="review-progress-bar" style="width:${progress}%"></div></div>
+    </div>
+    <div class="flashcard-area">
+      <div class="flashcard" id="flashcard" onclick="flipCard()">
+        <div id="fc-front">
+          <div class="fc-word">${escHtml(currentCard.word)}</div>
+          <div class="fc-type">${typeLabels[currentCard.type] || currentCard.type}</div>
+          <div class="fc-tap-hint">tap to reveal →</div>
+        </div>
+        <div id="fc-back" style="display:none">
+          <div class="fc-meaning">${escHtml(currentCard.meaning)}</div>
+          ${highlightedSentence ? `<div class="fc-sentence">${highlightedSentence}</div>` : ''}
+          ${currentCard.source ? `<div class="fc-source">📖 ${escHtml(currentCard.source)}</div>` : ''}
+        </div>
+      </div>
+    </div>
+    <div id="rating-area" style="display:none">
+      <p class="section-title" style="text-align:center;margin-bottom:12px">How well did you know it?</p>
+      <div class="rating-buttons">
+        <button class="rating-btn hard" onclick="rateCard(0)"><span class="rb-emoji">😅</span><span class="rb-label">Hard</span><span class="rb-desc">forgot / wrong</span></button>
+        <button class="rating-btn ok" onclick="rateCard(3)"><span class="rb-emoji">🤔</span><span class="rb-label">OK</span><span class="rb-desc">took effort</span></button>
+        <button class="rating-btn easy" onclick="rateCard(5)"><span class="rb-emoji">😊</span><span class="rb-label">Easy</span><span class="rb-desc">knew it!</span></button>
+      </div>
+    </div>`;
+}
+
+function flipCard() {
+  if (isFlipped) return;
+  isFlipped = true;
+  document.getElementById('fc-front').style.display = 'none';
+  document.getElementById('fc-back').style.display = 'block';
+  document.getElementById('flashcard').classList.add('flipped');
+  document.getElementById('rating-area').style.display = 'block';
+}
+
+function rateCard(quality) {
+  if (!currentCard) return;
+  const updated = sm2(currentCard, quality);
+  const idx = db.words.findIndex(w => w.id === currentCard.id);
+  if (idx !== -1) { db.words[idx] = { ...currentCard, ...updated }; saveData(db); }
+  reviewedCount++;
+  setTimeout(showNextCard, 200);
+}
+
+// ============================================================
+// STATS
+// ============================================================
+function renderStats() {
+  const total = db.words.length;
+  const due = getDueCards().length;
+  const mastered = db.words.filter(w => getLevel(w) === 'mastered').length;
+  const newW = db.words.filter(w => getLevel(w) === 'new').length;
+  const learning = db.words.filter(w => getLevel(w) === 'learning').length;
+  const review = db.words.filter(w => getLevel(w) === 'review').length;
+
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card"><div class="stat-number">${total}</div><div class="stat-label">Total Words</div></div>
+    <div class="stat-card"><div class="stat-number" style="color:var(--amber)">${due}</div><div class="stat-label">Due Today</div></div>
+    <div class="stat-card"><div class="stat-number" style="color:var(--green)">${mastered}</div><div class="stat-label">Mastered</div></div>
+    <div class="stat-card"><div class="stat-number" style="color:#f0a040">${db.streak || 0}🔥</div><div class="stat-label">Day Streak</div></div>`;
+
+  document.getElementById('level-breakdown').innerHTML = [
+    { name: 'New', cls: 'new', count: newW },
+    { name: 'Learning', cls: 'learning', count: learning },
+    { name: 'Review', cls: 'review', count: review },
+    { name: 'Mastered', cls: 'mastered', count: mastered },
+  ].map(b => `
+    <div class="level-row">
+      <span class="level-name">${b.name}</span>
+      <div class="level-bar-bg"><div class="level-bar ${b.cls}" style="width:${total ? (b.count/total*100) : 0}%"></div></div>
+      <span class="level-count">${b.count}</span>
+    </div>`).join('');
+}
+
+// ============================================================
+// EXPORT / IMPORT
+// ============================================================
+function exportData() {
+  const json = JSON.stringify(db, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const date = new Date().toISOString().slice(0,10);
+  a.download = `wordvault-${date}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✓ Exported successfully');
+}
+
+function importData(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (!imported.words || !Array.isArray(imported.words)) throw new Error('Invalid format');
+      // Merge: skip duplicates by id
+      const existingIds = new Set(db.words.map(w => w.id));
+      let added = 0;
+      imported.words.forEach(w => {
+        if (!existingIds.has(w.id)) { db.words.push(w); added++; }
+      });
+      saveData(db);
+      showToast(`✓ Imported ${added} new word${added !== 1 ? 's' : ''}`);
+      renderStats();
+    } catch(err) {
+      showToast('⚠ Invalid file format');
+    }
+  };
+  reader.readAsText(file);
+  input.value = ''; // reset so same file can be re-imported
+}
+
+// ============================================================
+// DELETE (single + bulk)
+// ============================================================
+let deleteTargetId = null;
+let deleteTargetIds = null;
+
+function openDeleteModal(id) {
+  deleteTargetId = id;
+  deleteTargetIds = null;
+  const w = db.words.find(x => x.id === id);
+  document.getElementById('delete-modal-title').textContent = 'Delete Word?';
+  document.getElementById('delete-modal-text').textContent = `Delete "${w?.word}"? This cannot be undone.`;
+  document.getElementById('delete-modal').classList.add('open');
+}
+function closeDeleteModal() {
+  deleteTargetId = null; deleteTargetIds = null;
+  document.getElementById('delete-modal').classList.remove('open');
+}
+function confirmDelete() {
+  if (deleteTargetIds) {
+    const count = deleteTargetIds.length;
+    db.words = db.words.filter(w => !deleteTargetIds.includes(w.id));
+    saveData(db);
+    closeDeleteModal();
+    cancelSelectMode();
+    showToast(`🗑 Deleted ${count} word${count !== 1 ? 's' : ''}`);
+  } else if (deleteTargetId) {
+    db.words = db.words.filter(w => w.id !== deleteTargetId);
+    saveData(db);
+    closeDeleteModal();
+    renderLibrary(document.getElementById('search-inp')?.value || '');
+    showToast('Deleted');
+  }
+  updateDueBadge();
+}
+
+// ============================================================
+// EDIT
+// ============================================================
+function editWord(id) {
+  const w = db.words.find(x => x.id === id);
+  if (!w) return;
+  const newSentence = prompt('Edit example sentence:', w.sentence || '');
+  if (newSentence === null) return;
+  const idx = db.words.findIndex(x => x.id === id);
+  db.words[idx].sentence = newSentence;
+  saveData(db);
+  renderLibrary(document.getElementById('search-inp')?.value || '');
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ============================================================
+// SERVICE WORKER
+// ============================================================
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
+// ============================================================
+// INIT
+// ============================================================
+initStreak();
+updateDueBadge();
+updateSourceFilters();
+</script>
+</body>
+</html>
